@@ -5,50 +5,34 @@ from argparse import ArgumentParser
 import numpy as np
 import pytest
 from os import path
+from glob import glob
 
 ptype = {'scipy': ScipyParticle, 'jit': JITParticle}
 
+def set_nemo_fieldset(ufiles, vfiles, mesh_mask=None):
+    filenames = {'U': ufiles,
+                 'V': vfiles}
+    if mesh_mask:
+        filenames['mesh_mask'] = mesh_mask
+
+    variables = {'U': 'uo',
+                 'V': 'vo'}
+    dimensions = {'U': {'lon': 'nav_lon', 'lat': 'nav_lat', 'depth': 'depthu', 'time': 'time_counter'},
+                  'V': {'lon': 'nav_lon', 'lat': 'nav_lat', 'depth': 'depthv', 'time': 'time_counter'}}
+    if mesh_mask:
+        return FieldSet.from_nemo(filenames, variables, dimensions, allow_time_extrapolation=False)
+    else:
+        return FieldSet.from_netcdf(filenames, variables, dimensions, allow_time_extrapolation=False)
 
 def run_nemo_curvilinear(mode, outfile):
     timer.fieldset = timer.Timer('FieldSet', parent=timer.nemo)
     data_path = '/data2/imau/oceanparcels/hydrodynamic_data/NEMO-MEDUSA/ORCA025-N006/'
-
-    mesh_filename = data_path + 'domain/coordinates.nc'
-    rotation_angles_filename = './rotation_angles.nc'
-    variables = {'cosU': 'cosU',
-                 'sinU': 'sinU',
-                 'cosV': 'cosV',
-                 'sinV': 'sinV'}
-    dimensions = {'U': {'lon': 'glamu', 'lat': 'gphiu'},
-                  'V': {'lon': 'glamv', 'lat': 'gphiv'},
-                  'F': {'lon': 'glamf', 'lat': 'gphif'}}
-    timer.fset_angles= timer.Timer('fset angles', parent=timer.fieldset)
-    compute_curvilinearGrid_rotationAngles(mesh_filename, rotation_angles_filename, variables, dimensions)
-    timer.fset_angles.stop()
+    ufiles = sorted(glob(data_path+'means/ORCA025-N06_20000???d05U.nc'))
+    vfiles = sorted(glob(data_path+'means/ORCA025-N06_20000???d05V.nc'))
     timer.fset_load = timer.Timer('fset loading', parent=timer.fieldset)
-
-    filenames = {'U': data_path + 'means/ORCA025-N06_2000????d05U.nc',
-                 'V': data_path + 'means/ORCA025-N06_2000????d05V.nc',
-                 'cosU': rotation_angles_filename,
-                 'sinU': rotation_angles_filename,
-                 'cosV': rotation_angles_filename,
-                 'sinV': rotation_angles_filename}
-    variables = {'U': 'uos',
-                 'V': 'vos',
-                 'cosU': 'cosU',
-                 'sinU': 'sinU',
-                 'cosV': 'cosV',
-                 'sinV': 'sinV'}
-
-    dimensions = {'U': {'lon': 'nav_lon', 'lat': 'nav_lat', 'time': 'time_counter'},
-                  'V': {'lon': 'nav_lon', 'lat': 'nav_lat', 'time': 'time_counter'},
-                  'cosU': {'lon': 'glamu', 'lat': 'gphiu'},
-                  'sinU': {'lon': 'glamu', 'lat': 'gphiu'},
-                  'cosV': {'lon': 'glamv', 'lat': 'gphiv'},
-                  'sinV': {'lon': 'glamv', 'lat': 'gphiv'}}
-
-    field_set = FieldSet.from_netcdf(filenames, variables, dimensions, mesh='spherical', allow_time_extrapolation=False)
+    field_set = set_nemo_fieldset(ufiles[0:3], vfiles[0:3], data_path + 'domain/coordinates.nc')
     timer.fset_load.stop()
+
     timer.fset_clean = timer.Timer('fset cleaning', parent=timer.fieldset)
     field_set.U.grid.lon[1:,1:] = field_set.cosU.grid.lon
     field_set.U.grid.lat[1:,1:] = field_set.cosU.grid.lat
@@ -84,11 +68,16 @@ def run_nemo_curvilinear(mode, outfile):
     pfile = ParticleFile(outfile, pset, type="indexed")
     pfile.write(pset, pset[0].time)
     timer.run = timer.Timer('computation', parent=timer.exe, start=False)
+    timer.advanceTime = timer.Timer('fset advancetime', parent=timer.exe, start=False)
     timer.write = timer.Timer('writing', parent=timer.exe, start=False)
-    for _ in range(350):
+    for d in range(100):
         timer.run.start()
         pset.execute(kernel, runtime=86400, dt=900, recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle})
         timer.run.stop()
+        timer.advanceTime.start()
+        if d%5 == 1 and d/5 > 0:
+            field_set.advancetime(set_nemo_fieldset(ufiles[d/5+2], vfiles[d/5+2]))
+        timer.advanceTime.stop()
         timer.write.start()
         pfile.write(pset, pset[0].time)
         timer.write.stop()
