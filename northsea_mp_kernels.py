@@ -28,7 +28,7 @@ def BeachTesting(particle, fieldset, time, dt):
 
 def UnBeaching(particle, fieldset, time, dt):
     if particle.beached == 4:
-        (ub, vb) = fieldset.UV_unbeach[time, particle.lon, particle.lat, particle.depth]
+        (ub, vb) = fieldset.UVunbeach[time, particle.lon, particle.lat, particle.depth]
         particle.lon += ub * dt
         particle.lat += vb * dt
 

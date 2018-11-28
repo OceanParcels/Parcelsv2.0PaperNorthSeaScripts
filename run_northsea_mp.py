@@ -1,4 +1,4 @@
-from parcels import FieldSet, Field, VectorField, ParticleFile, ParticleSet, JITParticle, Variable
+from parcels import FieldSet, Field, NestedField, VectorField, ParticleFile, ParticleSet, JITParticle, Variable
 from parcels import ErrorCode
 import numpy as np
 from glob import glob
@@ -25,6 +25,8 @@ def get_nemo_fieldset(res='0083'):
     fieldset.U.vmax = 5
     fieldset.V.vmax = 5
     fieldset.nemo_res = res
+
+    fieldset.cmems = False
     return fieldset
 
 def set_cmems(fieldset):
@@ -43,32 +45,60 @@ def set_cmems(fieldset):
     fieldset.Ucmems.vmax = 5
     fieldset.Vcmems.vmax = 5
 
-    Unemo = fieldset.U
-    Unemo.name = 'Unemo'
-    Vnemo = fieldset.V
-    Vnemo.name = 'Vnemo'
+    fieldset.Unemo = fieldset.U
+    fieldset.Unemo.name = 'Unemo'
+    fieldset.Vnemo = fieldset.V
+    fieldset.Vnemo.name = 'Vnemo'
 
-    U = NestedField('U', [fieldset.Ucmems, Unemo])
-    V = NestedField('V', [fieldset.Vcmems, Vnemo])
+    U = NestedField('U', [fieldset.Ucmems, fieldset.Unemo])
+    V = NestedField('V', [fieldset.Vcmems, fieldset.Vnemo])
     fieldset.U = U
     fieldset.V = V
 
+    fieldset.cmems = True
 
 
-def set_nemo_unbeaching(fieldset):
+def set_unbeaching(fieldset):
     files = '/home/philippe/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
     filenames = {'unBeachU': files,
                  'unBeachV': files,
                  'mesh_mask': files}
 
-    variables = {'unBeachU': 'unBeachU',
-                 'unBeachV': 'unBeachV'}
+    variables = {'Unemo_unbeach': 'unBeachU',
+                 'Vnemo_unbeach': 'unBeachV'}
     dimensions = {'lon': 'glamf', 'lat': 'gphif'}
-    fieldsetUnBeach = FieldSet.from_nemo(filenames, variables, dimensions, tracer_interp_method='cgrid_linear')
-    UVunbeach = VectorField('UV_unbeach', fieldsetUnBeach.unBeachU, fieldsetUnBeach.unBeachV)
-    fieldset.add_field(fieldsetUnBeach.unBeachU)
-    fieldset.add_field(fieldsetUnBeach.unBeachV)
-    fieldset.add_vector_field(UVunbeach)
+    fieldsetUnBeach = FieldSet.from_nemo(filenames, variables, dimensions, tracer_interp_method='cgrid_velocity')
+    fieldset.add_field(fieldsetUnBeach.Unemo_unbeach)
+    fieldset.add_field(fieldsetUnBeach.Vnemo_unbeach)
+
+    if fieldset.cmems == True:
+        fname = 'cmems_NWS_rean_004_009_unbeaching_vel.nc'
+        dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
+        Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
+        dimensionsV = {'data': 'unBeachV', 'lon': 'lon', 'lat': 'lat'}
+        Vcmems_unbeach = Field.from_netcdf(fname, 'Vcmems_unbeach', dimensionsV, fieldtype='V')
+        fieldset.add_field(Ucmems_unbeach)
+        fieldset.add_field(Vcmems_unbeach)
+
+
+        UVnemo_unbeach = VectorField('UVnemo_unbeach', fieldset.Unemo_unbeach, fieldset.Vnemo_unbeach)
+        UVcmems_unbeach = VectorField('UVcmems_unbeach', fieldset.Ucmems_unbeach, fieldset.Vcmems_unbeach)
+        UVunbeach = NestedField('UVunbeach', [UVcmems_unbeach, UVnemo_unbeach])
+        fieldset.add_vector_field(UVunbeach)
+    else:
+        UVunbeach = VectorField('UVunbeach', fieldset.Unemo_unbeach, fieldset.Vnemo_unbeach)
+        fieldset.add_vector_field(UVunbeach)
+
+def set_cmems_unbeaching(fieldset):
+    fname = 'cmems_NWS_rean_004_009_unbeaching_vel.nc'
+    dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
+    Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
+    dimensionsV = {'data': 'unBeachV', 'lon': 'lon', 'lat': 'lat'}
+    Vcmems_unbeach = Field.from_netcdf(fname, 'Vcmems_unbeach', dimensionsV, fieldtype='V')
+    fieldset.add_field(Ucmems_unbeach)
+    fieldset.add_field(Vcmems_unbeach)
+    UV_cmems_unbeach = VectorField('UVcmems_unbeach', fieldset.Ucmems_unbeach, fieldset.Vcmems_unbeach)
+    fieldset.add_vector_field(UV_cmems_unbeach)
 
 def get_particle_set(fieldset):
 
