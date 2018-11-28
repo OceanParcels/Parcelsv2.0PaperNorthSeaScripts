@@ -60,10 +60,7 @@ def set_cmems(fieldset):
 
 def set_unbeaching(fieldset):
     files = '/home/philippe/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
-    filenames = {'unBeachU': files,
-                 'unBeachV': files,
-                 'mesh_mask': files}
-
+    filenames = files
     variables = {'Unemo_unbeach': 'unBeachU',
                  'Vnemo_unbeach': 'unBeachV'}
     dimensions = {'lon': 'glamf', 'lat': 'gphif'}
@@ -72,7 +69,7 @@ def set_unbeaching(fieldset):
     fieldset.add_field(fieldsetUnBeach.Vnemo_unbeach)
 
     if fieldset.cmems == True:
-        fname = 'cmems_NWS_rean_004_009_unbeaching_vel.nc'
+        fname = '/home/philippe/data/cmems_NWS_rean_004_009_unbeaching_vel.nc'
         dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
         Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
         dimensionsV = {'data': 'unBeachV', 'lon': 'lon', 'lat': 'lat'}
@@ -89,16 +86,6 @@ def set_unbeaching(fieldset):
         UVunbeach = VectorField('UVunbeach', fieldset.Unemo_unbeach, fieldset.Vnemo_unbeach)
         fieldset.add_vector_field(UVunbeach)
 
-def set_cmems_unbeaching(fieldset):
-    fname = 'cmems_NWS_rean_004_009_unbeaching_vel.nc'
-    dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
-    Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
-    dimensionsV = {'data': 'unBeachV', 'lon': 'lon', 'lat': 'lat'}
-    Vcmems_unbeach = Field.from_netcdf(fname, 'Vcmems_unbeach', dimensionsV, fieldtype='V')
-    fieldset.add_field(Ucmems_unbeach)
-    fieldset.add_field(Vcmems_unbeach)
-    UV_cmems_unbeach = VectorField('UVcmems_unbeach', fieldset.Ucmems_unbeach, fieldset.Vcmems_unbeach)
-    fieldset.add_vector_field(UV_cmems_unbeach)
 
 def get_particle_set(fieldset):
 
@@ -143,7 +130,7 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False):
     if cmems:
         set_cmems(fieldset)
 
-    set_nemo_unbeaching(fieldset)
+    set_unbeaching(fieldset)
     pset = get_particle_set(fieldset)
     
     kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
