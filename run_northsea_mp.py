@@ -87,6 +87,25 @@ def set_unbeaching(fieldset):
         fieldset.add_vector_field(UVunbeach)
 
 
+def set_stokes(fieldset):
+    data_dir = '/projects/0/topios/hydrodynamic_data/WWIII/'
+    fnames = []
+    years = range(2000,2005)
+    for y in years:
+        basepath = data_dir + str(y) + '/ww3.*_uss.nc'
+        fnames += sorted(glob(str(basepath)))
+    dimensionsU = {'data': 'uuss', 'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
+    dimensionsV = {'data': 'vuss', 'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
+    Uuss = Field.from_netcdf(fnames, 'Uuss', dimensionsU, fieldtype='U', allow_time_extrapolation=False)
+    Vuss = Field.from_netcdf(fnames, 'Vuss', dimensionsV, fieldtype='V', allow_time_extrapolation=False, grid=Uuss.grid, dataFiles=Uuss.dataFiles)
+    fieldset.add_field(Uuss)
+    fieldset.add_field(Vuss)
+    fieldset.Uuss.vmax = 5
+    fieldset.Vuss.vmax = 5
+    uv_uss = VectorField('UVuss', fieldset.Uuss, fieldset.Vuss)
+    fieldset.add_vector_field(uv_uss)
+
+
 def get_particle_set(fieldset):
 
     class PlasticParticle(JITParticle):
@@ -125,15 +144,18 @@ def get_particle_set(fieldset):
                                  time=np.repeat(times, len(lons)))
 
 
-def run_northsea_mp(outfile, nemo_res='0083', cmems=False):
+def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False):
     fieldset = get_nemo_fieldset(nemo_res)
     if cmems:
         set_cmems(fieldset)
+    if stokes:
+        set_stokes(fieldset)
 
     set_unbeaching(fieldset)
     pset = get_particle_set(fieldset)
     
-    kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
+    #kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
+    kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting) + pset.Kernel(Ageing)
     
     pfile = ParticleFile(outfile, pset)
     pfile.write(pset, pset[0].time)

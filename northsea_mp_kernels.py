@@ -14,6 +14,13 @@ def AdvectionRK4(particle, fieldset, time, dt):
         particle.lat += (v1 + 2*v2 + 2*v3 + v4) / 6. * dt
         particle.beached = 2
 
+def StokesDrag(particle, fieldset, time, dt):
+    if particle.lat < 80 and particle.beached == 0:
+        (u_uss, v_uss) = fieldset.UVuss[time, particle.lon, particle.lat, particle.depth] 
+        particle.lon += u_uss
+        particle.lat += v_uss
+        particle.beached = 3
+
 def BeachTesting(particle, fieldset, time, dt):
     if particle.beached == 2 or particle.beached == 3:
         (u, v) = fieldset.UV[time, particle.lon, particle.lat, particle.depth]
@@ -25,7 +32,6 @@ def BeachTesting(particle, fieldset, time, dt):
         else:
             particle.beached = 0
            
-
 def UnBeaching(particle, fieldset, time, dt):
     if particle.beached == 4:
         (ub, vb) = fieldset.UVunbeach[time, particle.lon, particle.lat, particle.depth]
