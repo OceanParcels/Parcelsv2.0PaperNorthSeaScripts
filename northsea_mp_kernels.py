@@ -1,3 +1,6 @@
+from parcels import rng as random
+import math
+
 def AdvectionRK4(particle, fieldset, time, dt):
     if particle.beached == 0:
         (u1, v1) = fieldset.UV[time, particle.lon, particle.lat, particle.depth]
