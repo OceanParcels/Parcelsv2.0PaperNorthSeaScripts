@@ -80,20 +80,24 @@ def get_particle_set():
                                  time=np.repeat(times, len(lons)))
 
 
-fieldset = get_nemo_fieldset()
-set_nemo_unbeaching(fieldset)
-pset = get_particle_set()
-
-kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
+def run_northsea_mp(outfile, nemo_res='0083'):
+    fieldset = get_nemo_fieldset(nemo_res)
+    set_nemo_unbeaching(fieldset)
+    pset = get_particle_set()
+    
+    kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
+    
+    pfile = ParticleFile(outfile, pset)
+    pfile.write(pset, pset[0].time)
+    
+    tic = timelib.time()
+    ndays = 365*4+100
+    for d in range(ndays/2):
+        day = 2 * d
+        print('running %d / %d [time %g s]: %d particles ' % (day, ndays, timelib.time()-tic, len(pset)))
+        pset.execute(kernel, runtime=delta(days=2), dt=900, verbose_progress=False, recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle})
+        pfile.write(pset, pset[0].time)
 
 outfile = '/scratch/shared/delandmeter/northSea_plastic/test.nc'
-pfile = ParticleFile(outfile, pset)
-pfile.write(pset, pset[0].time)
+run_northsea_mp(outfile)
 
-tic = timelib.time()
-ndays = 365*4+100
-for d in range(ndays/2):
-    day = 2 * d
-    print('running %d / %d [time %g s]: %d particles ' % (day+1, ndays, timelib.time()-tic, len(pset)))
-    pset.execute(kernel, runtime=delta(days=2), dt=900, verbose_progress=False, recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle})
-    pfile.write(pset, pset[0].time)
