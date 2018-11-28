@@ -70,7 +70,7 @@ def set_nemo_unbeaching(fieldset):
     fieldset.add_field(fieldsetUnBeach.unBeachV)
     fieldset.add_vector_field(UVunbeach)
 
-def get_particle_set():
+def get_particle_set(fieldset):
 
     class PlasticParticle(JITParticle):
         age = Variable('age', dtype=np.float32, initial=0.)
@@ -114,7 +114,7 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False):
         set_cmems(fieldset)
 
     set_nemo_unbeaching(fieldset)
-    pset = get_particle_set()
+    pset = get_particle_set(fieldset)
     
     kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
     
