@@ -28,7 +28,7 @@ def get_nemo_fieldset(res='0083'):
     return fieldset
 
 def set_nemo_unbeaching(fieldset):
-    files = '~/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
+    files = '/home/philippe/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
     filenames = {'unBeachU': files,
                  'unBeachV': files,
                  'mesh_mask': files}
@@ -81,11 +81,12 @@ def get_particle_set():
 
 
 fieldset = get_nemo_fieldset()
+set_nemo_unbeaching(fieldset)
 pset = get_particle_set()
 
 kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
 
-outfile = '/scratch/shared/delandmeter/northSea_plastic/'+__file__[:-3]
+outfile = '/scratch/shared/delandmeter/northSea_plastic/test.nc'
 pfile = ParticleFile(outfile, pset)
 pfile.write(pset, pset[0].time)
 
