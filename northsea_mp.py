@@ -89,6 +89,7 @@ outfile = '/scratch/shared/delandmeter/northSea_plastic/'+__file__[:-3]
 pfile = ParticleFile(outfile, pset)
 pfile.write(pset, pset[0].time)
 
+tic = timelib.time()
 ndays = 365*4+100
 for d in range(ndays/2):
     day = 2 * d
