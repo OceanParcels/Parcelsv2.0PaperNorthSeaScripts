@@ -106,6 +106,17 @@ def set_stokes(fieldset):
     fieldset.add_vector_field(uv_uss)
 
 
+def set_diffusion(fieldset, diffusivity):
+    fname = '/home/philippe/data/ORCA0083-N06_meshSize.nc'
+    dimensions = {'lon': 'glamt', 'lat': 'gphit'}
+    meshSize = Field.from_netcdf(fname, 'meshSize', dimensions, interp_method='nearest')
+    fieldset.add_field(meshSize)
+    fieldset.add_field(Field('Kh_zonal', data=diffusivity*np.ones(meshSize.data.shape),
+                              grid=meshSize.grid, mesh='spherical'))
+    fieldset.add_field(Field('Kh_meridional', data=diffusivity*np.ones(meshSize.data.shape),
+                              grid=meshSize.grid, mesh='spherical'))
+
+
 def get_particle_set(fieldset):
 
     class PlasticParticle(JITParticle):
@@ -144,12 +155,14 @@ def get_particle_set(fieldset):
                                  time=np.repeat(times, len(lons)))
 
 
-def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False):
+def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusion=0):
     fieldset = get_nemo_fieldset(nemo_res)
     if cmems:
         set_cmems(fieldset)
     if stokes:
         set_stokes(fieldset)
+    if diffusion > 0:
+        set_diffusion(fieldset, diffusion)
 
     set_unbeaching(fieldset)
     pset = get_particle_set(fieldset)
@@ -157,6 +170,8 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False):
     kernel = pset.Kernel(AdvectionRK4) + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching)
     if stokes:
        kernel += pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting)
+    if diffusion > 0:
+       kernel += pset.Kernel(BrownianMotion2D) + pset.Kernel(BeachTesting)
     kernel += pset.Kernel(Ageing)
     
     pfile = ParticleFile(outfile, pset)

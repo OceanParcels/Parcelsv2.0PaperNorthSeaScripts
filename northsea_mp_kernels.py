@@ -21,6 +21,17 @@ def StokesDrag(particle, fieldset, time, dt):
         particle.lat += v_uss
         particle.beached = 3
 
+def BrownianMotion2D(particle, fieldset, time, dt):
+    if particle.beached == 0:
+        kh_meridional = fieldset.Kh_meridional[time, particle.lon, particle.lat, particle.depth]
+        kh_zonal = fieldset.Kh_zonal[time, particle.lon, particle.lat, particle.depth]
+        l = fieldset.meshSize[time, particle.lon, particle.lat, particle.depth]
+        l0 = 1000
+
+        particle.lat += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt)* kh_meridional * math.pow(l/l0, 1.33))
+        particle.lon += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt)* kh_zonal      * math.pow(l/l0, 1.33))
+        particle.beached = 3
+
 def BeachTesting(particle, fieldset, time, dt):
     if particle.beached == 2 or particle.beached == 3:
         (u, v) = fieldset.UV[time, particle.lon, particle.lat, particle.depth]
