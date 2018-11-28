@@ -1,6 +1,7 @@
 from parcels import rng as random
 import math
 
+
 def AdvectionRK4(particle, fieldset, time, dt):
     if particle.beached == 0:
         (u1, v1) = fieldset.UV[time, particle.lon, particle.lat, particle.depth]
@@ -17,23 +18,26 @@ def AdvectionRK4(particle, fieldset, time, dt):
         particle.lat += (v1 + 2*v2 + 2*v3 + v4) / 6. * dt
         particle.beached = 2
 
+
 def StokesDrag(particle, fieldset, time, dt):
     if particle.lat < 80 and particle.beached == 0:
-        (u_uss, v_uss) = fieldset.UVuss[time, particle.lon, particle.lat, particle.depth] 
+        (u_uss, v_uss) = fieldset.UVuss[time, particle.lon, particle.lat, particle.depth]
         particle.lon += u_uss
         particle.lat += v_uss
         particle.beached = 3
+
 
 def BrownianMotion2D(particle, fieldset, time, dt):
     if particle.beached == 0:
         kh_meridional = fieldset.Kh_meridional[time, particle.lon, particle.lat, particle.depth]
         kh_zonal = fieldset.Kh_zonal[time, particle.lon, particle.lat, particle.depth]
-        l = fieldset.meshSize[time, particle.lon, particle.lat, particle.depth]
-        l0 = 1000
+        dx = fieldset.meshSize[time, particle.lon, particle.lat, particle.depth]
+        dx0 = 1000
 
-        particle.lat += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt)* kh_meridional * math.pow(l/l0, 1.33))
-        particle.lon += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt)* kh_zonal      * math.pow(l/l0, 1.33))
+        particle.lat += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt) * kh_meridional * math.pow(dx/dx0, 1.33))
+        particle.lon += random.uniform(-1., 1.) * math.sqrt(2*math.fabs(dt) * kh_zonal      * math.pow(dx/dx0, 1.33))
         particle.beached = 3
+
 
 def BeachTesting(particle, fieldset, time, dt):
     if particle.beached == 2 or particle.beached == 3:
@@ -45,17 +49,19 @@ def BeachTesting(particle, fieldset, time, dt):
                 particle.beached = 1
         else:
             particle.beached = 0
-           
+
+
 def UnBeaching(particle, fieldset, time, dt):
     if particle.beached == 4:
         (ub, vb) = fieldset.UVunbeach[time, particle.lon, particle.lat, particle.depth]
         particle.lon += ub * dt
         particle.lat += vb * dt
 
+
 def Ageing(particle, fieldset, time, dt):
-    particle.age += dt 
+    particle.age += dt
+
 
 def DeleteParticle(particle, fieldset, time, dt):
     print("Particle lost !! (%g %g %g %g)" % (particle.lon, particle.lat, particle.depth, particle.time))
     particle.delete()
-

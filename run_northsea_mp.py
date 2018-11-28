@@ -6,6 +6,7 @@ import time as timelib
 from datetime import timedelta as delta
 from northsea_mp_kernels import *
 
+
 def get_nemo_fieldset(res='0083'):
     data_dir = '/projects/0/topios/hydrodynamic_data/NEMO-MEDUSA/ORCA%s-N006/' % res
     ufiles = sorted(glob(data_dir+'means/ORCA%s-N06_200?????d05U.nc' % res))
@@ -14,7 +15,6 @@ def get_nemo_fieldset(res='0083'):
 
     filenames = {'U': {'lon': mesh_mask, 'lat': mesh_mask, 'data': ufiles},
                  'V': {'lon': mesh_mask, 'lat': mesh_mask, 'data': vfiles}}
-
 
     variables = {'U': 'uo',
                  'V': 'vo'}
@@ -29,10 +29,11 @@ def get_nemo_fieldset(res='0083'):
     fieldset.cmems = False
     return fieldset
 
+
 def set_cmems(fieldset):
     data_dir = '/projects/0/topios/hydrodynamic_data/CMEMS/NORTHWESTSHELF_REANALYSIS_PHYS_004_009/MetO-NWS-REAN-PHYS-daily-CUR/'
     fnames = []
-    years = range(2000,2005)
+    years = range(2000, 2005)
     for y in years:
         basepath = data_dir + str(y) + '/*/' + 'metoffice_foam1_amm7_NWS_RFVL_dm*.nc'
         fnames += sorted(glob(str(basepath)))
@@ -68,7 +69,7 @@ def set_unbeaching(fieldset):
     fieldset.add_field(fieldsetUnBeach.Unemo_unbeach)
     fieldset.add_field(fieldsetUnBeach.Vnemo_unbeach)
 
-    if fieldset.cmems == True:
+    if fieldset.cmems:
         fname = '/home/philippe/data/cmems_NWS_rean_004_009_unbeaching_vel.nc'
         dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
         Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
@@ -76,7 +77,6 @@ def set_unbeaching(fieldset):
         Vcmems_unbeach = Field.from_netcdf(fname, 'Vcmems_unbeach', dimensionsV, fieldtype='V')
         fieldset.add_field(Ucmems_unbeach)
         fieldset.add_field(Vcmems_unbeach)
-
 
         UVnemo_unbeach = VectorField('UVnemo_unbeach', fieldset.Unemo_unbeach, fieldset.Vnemo_unbeach)
         UVcmems_unbeach = VectorField('UVcmems_unbeach', fieldset.Ucmems_unbeach, fieldset.Vcmems_unbeach)
@@ -90,7 +90,7 @@ def set_unbeaching(fieldset):
 def set_stokes(fieldset):
     data_dir = '/projects/0/topios/hydrodynamic_data/WWIII/'
     fnames = []
-    years = range(2000,2005)
+    years = range(2000, 2005)
     for y in years:
         basepath = data_dir + str(y) + '/ww3.*_uss.nc'
         fnames += sorted(glob(str(basepath)))
@@ -112,9 +112,9 @@ def set_diffusion(fieldset, diffusivity):
     meshSize = Field.from_netcdf(fname, 'meshSize', dimensions, interp_method='nearest')
     fieldset.add_field(meshSize)
     fieldset.add_field(Field('Kh_zonal', data=diffusivity*np.ones(meshSize.data.shape),
-                              grid=meshSize.grid, mesh='spherical'))
+                             grid=meshSize.grid, mesh='spherical'))
     fieldset.add_field(Field('Kh_meridional', data=diffusivity*np.ones(meshSize.data.shape),
-                              grid=meshSize.grid, mesh='spherical'))
+                             grid=meshSize.grid, mesh='spherical'))
 
 
 def get_particle_set(fieldset):
@@ -125,30 +125,30 @@ def get_particle_set(fieldset):
         beached = Variable('beached', dtype=np.int32, initial=0.)
 
     # meshgrid containing 11x11 points uniformly distributed in a [0,1]x[0,1] quad
-    vec = np.linspace(0,1,11)
+    vec = np.linspace(0, 1, 11)
     xsi, eta = np.meshgrid(vec, vec)
-    
+
     # get particles in Rhine estuary
     lonCorners = [2.96824026, 3.22713804, 3.26175451, 3.002671]
-    latCorners = [51.60693741, 51.58454132, 51.73711395, 51.759758] 
+    latCorners = [51.60693741, 51.58454132, 51.73711395, 51.759758]
     lon_r = (1-xsi)*(1-eta) * lonCorners[0] + xsi*(1-eta) * lonCorners[1] + \
-            xsi*eta * lonCorners[2] + (1-xsi)*eta * lonCorners[3]
+        xsi*eta * lonCorners[2] + (1-xsi)*eta * lonCorners[3]
     lat_r = (1-xsi)*(1-eta) * latCorners[0] + xsi*(1-eta) * latCorners[1] + \
-            xsi*eta * latCorners[2] + (1-xsi)*eta * latCorners[3]
-    
+        xsi*eta * latCorners[2] + (1-xsi)*eta * latCorners[3]
+
     # get particles in Thames estuary
     lonCorners = [1.37941658, 1.63887346, 1.67183721, 1.41217935]
     latCorners = [51.58309555, 51.56196213, 51.71636581, 51.73773575]
     lon_t = (1-xsi)*(1-eta) * lonCorners[0] + xsi*(1-eta) * lonCorners[1] + \
-            xsi*eta * lonCorners[2] + (1-xsi)*eta * lonCorners[3]
+        xsi*eta * lonCorners[2] + (1-xsi)*eta * lonCorners[3]
     lat_t = (1-xsi)*(1-eta) * latCorners[0] + xsi*(1-eta) * latCorners[1] + \
-            xsi*eta * latCorners[2] + (1-xsi)*eta * latCorners[3]
-    
+        xsi*eta * latCorners[2] + (1-xsi)*eta * latCorners[3]
+
     # gather all particles, released every day for one year
     lons = np.concatenate((lon_r.flatten(), lon_t.flatten()))
     lats = np.concatenate((lat_r.flatten(), lat_t.flatten()))
     times = np.arange(np.datetime64('2000-01-05'), np.datetime64('2001-01-05'))
-    
+
     return ParticleSet.from_list(fieldset, PlasticParticle,
                                  lon=np.tile(lons, [len(times)]),
                                  lat=np.tile(lats, [len(times)]),
@@ -166,17 +166,17 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusi
 
     set_unbeaching(fieldset)
     pset = get_particle_set(fieldset)
-    
+
     kernel = pset.Kernel(AdvectionRK4) + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching)
     if stokes:
-       kernel += pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting)
+        kernel += pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting)
     if diffusion > 0:
-       kernel += pset.Kernel(BrownianMotion2D) + pset.Kernel(BeachTesting)
+        kernel += pset.Kernel(BrownianMotion2D) + pset.Kernel(BeachTesting)
     kernel += pset.Kernel(Ageing)
-    
+
     pfile = ParticleFile(outfile, pset)
     pfile.write(pset, pset[0].time)
-    
+
     tic = timelib.time()
     ndays = 365*4+100
     for d in range(ndays/2):
