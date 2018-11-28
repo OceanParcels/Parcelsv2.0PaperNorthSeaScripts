@@ -27,6 +27,34 @@ def get_nemo_fieldset(res='0083'):
     fieldset.nemo_res = res
     return fieldset
 
+def set_cmems(fieldset):
+    data_dir = '/projects/0/topios/hydrodynamic_data/CMEMS/NORTHWESTSHELF_REANALYSIS_PHYS_004_009/MetO-NWS-REAN-PHYS-daily-CUR/'
+    fnames = []
+    years = range(2000,2005)
+    for y in years:
+        basepath = data_dir + str(y) + '/*/' + 'metoffice_foam1_amm7_NWS_RFVL_dm*.nc'
+        fnames += sorted(glob(str(basepath)))
+    dimensionsU = {'data': 'vozocrtx', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
+    dimensionsV = {'data': 'vomecrty', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
+    Ucmems = Field.from_netcdf(fnames, 'Ucmems', dimensionsU, fieldtype='U', allow_time_extrapolation=False)
+    Vcmems = Field.from_netcdf(fnames, 'Vcmems', dimensionsV, fieldtype='V', allow_time_extrapolation=False, grid=Ucmems.grid, dataFiles=Ucmems.dataFiles)
+    fieldset.add_field(Ucmems)
+    fieldset.add_field(Vcmems)
+    fieldset.Ucmems.vmax = 5
+    fieldset.Vcmems.vmax = 5
+
+    Unemo = fieldset.U
+    Unemo.name = 'Unemo'
+    Vnemo = fieldset.V
+    Vnemo.name = 'Vnemo'
+
+    U = NestedField('U', [fieldset.Ucmems, Unemo])
+    V = NestedField('V', [fieldset.Vcmems, Vnemo])
+    fieldset.U = U
+    fieldset.V = V
+
+
+
 def set_nemo_unbeaching(fieldset):
     files = '/home/philippe/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
     filenames = {'unBeachU': files,
@@ -80,8 +108,11 @@ def get_particle_set():
                                  time=np.repeat(times, len(lons)))
 
 
-def run_northsea_mp(outfile, nemo_res='0083'):
+def run_northsea_mp(outfile, nemo_res='0083', cmems=False):
     fieldset = get_nemo_fieldset(nemo_res)
+    if cmems:
+        set_cmems(fieldset)
+
     set_nemo_unbeaching(fieldset)
     pset = get_particle_set()
     
