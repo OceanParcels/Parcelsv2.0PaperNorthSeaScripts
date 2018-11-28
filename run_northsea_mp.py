@@ -154,8 +154,10 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False):
     set_unbeaching(fieldset)
     pset = get_particle_set(fieldset)
     
-    #kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(Ageing)
-    kernel = AdvectionRK4 + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching) + pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting) + pset.Kernel(Ageing)
+    kernel = pset.Kernel(AdvectionRK4) + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching)
+    if stokes:
+       kernel += pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting)
+    kernel += pset.Kernel(Ageing)
     
     pfile = ParticleFile(outfile, pset)
     pfile.write(pset, pset[0].time)
