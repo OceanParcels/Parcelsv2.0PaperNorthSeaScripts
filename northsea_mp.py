@@ -28,7 +28,7 @@ def get_nemo_fieldset(res='0083'):
     return fieldset
 
 def set_nemo_unbeaching(fieldset):
-    files = './ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
+    files = '~/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
     filenames = {'unBeachU': files,
                  'unBeachV': files,
                  'mesh_mask': files}
