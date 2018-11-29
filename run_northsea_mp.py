@@ -155,7 +155,11 @@ def get_particle_set(fieldset):
                                  time=np.repeat(times, len(lons)))
 
 
+from parcels import timer
+
 def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusion=0):
+    timer.root = timer.Timer('Main')
+
     fieldset = get_nemo_fieldset(nemo_res)
     if cmems:
         set_cmems(fieldset)
@@ -174,13 +178,28 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusi
         kernel += pset.Kernel(BrownianMotion2D) + pset.Kernel(BeachTesting)
     kernel += pset.Kernel(Ageing)
 
+    timer.particlefile = timer.Timer('ParticleFile', parent=timer.root)
+    timer.particlefileFin = timer.Timer('ParticleFileFin', parent=timer.root, start=False)
     pfile = ParticleFile(outfile, pset)
     pfile.write(pset, pset[0].time)
+    timer.particlefile.stop()
+    timer.run = timer.Timer('Execution', parent=timer.root, start=False)
 
     tic = timelib.time()
     ndays = 365*4+100
+    ndays = 180
     for d in range(ndays/2):
         day = 2 * d
         print('running %d / %d [time %g s]: %d particles ' % (day, ndays, timelib.time()-tic, len(pset)))
+        timer.run.start()
         pset.execute(kernel, runtime=delta(days=2), dt=900, verbose_progress=False, recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle})
+        timer.run.stop()
+        timer.particlefile.start()
         pfile.write(pset, pset[0].time)
+        timer.particlefile.stop()
+
+    timer.particlefileFin.start()
+    del pfile
+    timer.particlefileFin.stop()
+    timer.root.stop()
+    timer.root.print_tree()
