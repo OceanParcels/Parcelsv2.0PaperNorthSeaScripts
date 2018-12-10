@@ -56,6 +56,7 @@ def UnBeaching(particle, fieldset, time, dt):
         (ub, vb) = fieldset.UVunbeach[time, particle.lon, particle.lat, particle.depth]
         particle.lon += ub * dt
         particle.lat += vb * dt
+        particle.beached = 0
 
 
 def Ageing(particle, fieldset, time, dt):
