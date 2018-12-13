@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Created on December 1 2018
+
+@author: Philippe Delandmeter
+
+Function postprocessing floating MP particles released in Thames and Rhiver estuaries
+"""
+
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from mpl_toolkits.basemap import Basemap

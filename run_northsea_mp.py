@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Created on December 1 2018
+
+@author: Philippe Delandmeter
+
+Function running floating MP particles released in Thames and Rhiver estuaries
+"""
+
+
 from parcels import FieldSet, Field, NestedField, VectorField, ParticleFile, ParticleSet, JITParticle, Variable
 from parcels import ErrorCode
 import numpy as np

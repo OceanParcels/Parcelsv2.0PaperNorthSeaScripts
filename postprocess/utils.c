@@ -1,3 +1,12 @@
+/*
+ *
+ * @date: December 1 2018
+ * @author: Philippe Delandmeter
+ *
+ * Useful functions using open for loop for MP particle postprocessing
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 

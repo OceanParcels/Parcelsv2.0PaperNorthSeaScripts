@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Created on December 1 2018
+
+@author: Philippe Delandmeter
+
+Kernels defining floating MP particle dynamics
+"""
+
 from parcels import rng as random
 import math
 

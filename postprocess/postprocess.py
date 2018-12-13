@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Created on December 1 2018
+
+@author: Philippe Delandmeter
+
+Postprocessing class and useful functions
+"""
+
+
 import numpy as np
 from netCDF4 import Dataset
 import numpy.ctypeslib as npct
