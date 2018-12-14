@@ -93,7 +93,9 @@ def draw(filename):
         m.drawmeridians(np.arange(-180, 181, 30), labels=[False, False, False, True], fontsize=15, zorder=3)
         m.fillcontinents(color='blanchedalmond')
 
-        ax.text(0.92, 1.05, '# Part / km$^2$',
+        legend_text = title
+        xshift = 0 if len(legend_text) > 6 else .095
+        ax.text(0.92+xshift, 1.05, legend_text,
                 transform=ax.transAxes,
                 verticalalignment='top',
                 fontsize=24)
@@ -147,9 +149,9 @@ def draw(filename):
     #plot(map_mean_age, title, cmap_name='plasma_r', log=False, vmin=0, vmax=3*365, show=False, fname='nemo_c'+runid+'_mean_age.png')
     #title = run_name + ': Particle mean age (days, saturated at one year)'
     #plot(map_mean_age, title, cmap_name='plasma_r', log=False, vmin=0, vmax=365, over='green', show=False, fname='nemo_c'+runid+'_mean_age_short.png')
-    title = basename + ': Particle 3rd year density'
-    plot(map_density_3rd_year, title, cmap_name='hot_r', log=True, vmin=1e-10, vmax=1e-5, under='white', over='blue', show=False, fname=basename+'_3rd_yr_density_b.png')
-    #title = run_name + ': Affected cell proportion'
-    #plot(map_touched, title, cmap_name='Spectral_r', log=True, vmin=.1, vmax=100, under='white', show=False, fname='nemo_c'+runid+'_touched_log.png')
+    title = '# Part / km$^2$'
+    plot(map_density_3rd_year, title, cmap_name='hot_r', log=True, vmin=1e-10, vmax=1e-5, under='white', over='blue', show=False, fname=basename+'_3rd_yr_density.png')
+    title = '%'
+    plot(map_touched, title, cmap_name='Spectral_r', log=True, vmin=.1, vmax=100, under='white', show=False, fname=basename+'_touched_log.png')
     #title = run_name + ': Affected cell proportion'
     #plot(map_touched, title, cmap_name='Spectral_r', log=False, vmin=.1, vmax=100, under='white', show=False, fname='nemo_c'+runid+'_touched.png')
