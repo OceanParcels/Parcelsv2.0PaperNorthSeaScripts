@@ -72,7 +72,7 @@ def set_cmems(fieldset):
 
 
 def set_unbeaching(fieldset):
-    files = '/home/philippe/data/ORCA%s-N006_unbeaching_vel.nc' % fieldset.nemo_res
+    files = '/home/philippe/data/ORCA%s-N06_unbeaching_vel.nc' % fieldset.nemo_res
     filenames = files
     variables = {'Unemo_unbeach': 'unBeachU',
                  'Vnemo_unbeach': 'unBeachV'}
