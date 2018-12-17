@@ -24,6 +24,7 @@ class ParticleData(object):
             self.age = dataset.variables['age'][:] / 86400.
             self.lon = dataset.variables['lon'][:]
             self.lat = dataset.variables['lat'][:]
+            self.beached = dataset.variables['beached'][:]
             self.age.fill_value = 9999
             self.age = self.age.filled()
             self.npart = self.lon.shape[0]
@@ -34,6 +35,7 @@ class ParticleData(object):
             self.age = None
             self.lon = None
             self.lat = None
+            self.beached = None
             self.npart = -1
                 
 
@@ -44,6 +46,7 @@ class ParticleData(object):
             self.id = self.id[pind[0],:]
             self.time = self.time[pind[0],:]
             self.age = self.age[pind[0],:]
+            self.beached = self.beached[pind[0],:]
             self.npart = self.lon.shape[0]
         else:
             self.lon = self.lon[:,pind[1]]
@@ -51,6 +54,7 @@ class ParticleData(object):
             self.id = self.id[:,pind[1]]
             self.time = self.time[:,pind[1]]
             self.age = self.age[:,pind[1]]
+            self.beached = self.beached[:,pind[1]]
         
     def copy(self):
         p = ParticleData()
@@ -59,6 +63,7 @@ class ParticleData(object):
         p.age = self.age.copy()
         p.lon = self.lon.copy()
         p.lat = self.lat.copy()
+        p.beached = self.beached.copy()
         p.npart = self.npart
         return p
 
