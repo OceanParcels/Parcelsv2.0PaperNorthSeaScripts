@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 zones = {}
 zones['0083'] = np.load('nemo0083_zone_concentration.npy')
 zones['0083_cmems'] = np.load('nemo0083_cmems_zone_concentration.npy')
+zones['025'] = np.load('nemo025_zone_concentration.npy')
 zones['0083_stokes'] = np.load('nemo0083_stokes_zone_concentration.npy')
 zones['0083_diff'] = np.load('nemo0083_diff_zone_concentration.npy')
 
