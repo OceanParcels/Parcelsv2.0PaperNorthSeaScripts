@@ -51,9 +51,6 @@ def plot_run(data, name, show_legend=False):
 
     ax.set_xlabel('years', fontsize=26)
     ax.xaxis.set_label_coords(.98, -0.01)
-    # ylabel = ax.set_ylabel('%', fontsize=26)
-    # ylabel.set_rotation(0)
-    # ax.yaxis.set_label_coords(0, 1.05)
 
     zone_names = ['North Sea', 'Danish Strait',
                   'Norwegian Sea', 'Arctic', 'Atlantic']
