@@ -51,8 +51,9 @@ def set_cmems(fieldset):
         fnames += sorted(glob(str(basepath)))
     dimensionsU = {'data': 'vozocrtx', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
     dimensionsV = {'data': 'vomecrty', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
-    Ucmems = Field.from_netcdf(fnames, 'Ucmems', dimensionsU, fieldtype='U', allow_time_extrapolation=False)
-    Vcmems = Field.from_netcdf(fnames, 'Vcmems', dimensionsV, fieldtype='V', allow_time_extrapolation=False, grid=Ucmems.grid, dataFiles=Ucmems.dataFiles)
+    indices = {'lon': range(1, 296), 'lat': range(1, 374)}  # cmems puts nan values at its borders
+    Ucmems = Field.from_netcdf(fnames, 'Ucmems', dimensionsU, fieldtype='U', indices=indices, allow_time_extrapolation=False)
+    Vcmems = Field.from_netcdf(fnames, 'Vcmems', dimensionsV, fieldtype='V', indices=indices, allow_time_extrapolation=False, grid=Ucmems.grid, dataFiles=Ucmems.dataFiles)
     fieldset.add_field(Ucmems)
     fieldset.add_field(Vcmems)
     fieldset.Ucmems.vmax = 5
