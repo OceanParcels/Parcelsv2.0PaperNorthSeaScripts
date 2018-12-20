@@ -11,5 +11,15 @@ Simulation master file
 
 from run_northsea_mp import run_northsea_mp
 
-outfile = '/scratch/shared/delandmeter/northSea_plastic/test.nc'
-run_northsea_mp(outfile, nemo_res='0083', cmems=True, stokes=True, diffusion=1)
+path = './ncfiles/'
+
+run_northsea_mp(path+'nemo0083.nc',
+                nemo_res='0083', cmems=False, stokes=False, diffusion=0)
+run_northsea_mp(path+'nemo025.nc',
+                nemo_res='025', cmems=False, stokes=False, diffusion=0)
+run_northsea_mp(path+'nemo0083_cmems.nc',
+                nemo_res='0083', cmems=True, stokes=False, diffusion=0)
+run_northsea_mp(path+'nemo0083_stokes.nc',
+                nemo_res='0083', cmems=False, stokes=True, diffusion=0)
+run_northsea_mp(path+'nemo0083_diff.nc',
+                nemo_res='0083', cmems=False, stokes=False, diffusion=1)
