@@ -33,8 +33,8 @@ def AdvectionRK4(particle, fieldset, time):
 def StokesDrag(particle, fieldset, time):
     if particle.lat < 80 and particle.beached == 0:
         (u_uss, v_uss) = fieldset.UVuss[time, particle.depth, particle.lat, particle.lon]
-        particle.lon += u_uss
-        particle.lat += v_uss
+        particle.lon += u_uss * particle.dt
+        particle.lat += v_uss * particle.dt
         particle.beached = 3
 
 
@@ -68,6 +68,7 @@ def UnBeaching(particle, fieldset, time):
         particle.lon += ub * particle.dt
         particle.lat += vb * particle.dt
         particle.beached = 0
+        particle.unbeachCount += 1
 
 
 def Ageing(particle, fieldset, time):
@@ -75,5 +76,5 @@ def Ageing(particle, fieldset, time):
 
 
 def DeleteParticle(particle, fieldset, time):
-    print("Particle lost !! (%g %g %g %g)" % (particle.lon, particle.lat, particle.depth, particle.time))
+    print("Particle [%d] lost !! (%g %g %g %g)" % (particle.id, particle.lon, particle.lat, particle.depth, particle.time))
     particle.delete()

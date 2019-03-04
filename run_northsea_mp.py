@@ -34,8 +34,6 @@ def get_nemo_fieldset(res='0083'):
                   'V': {'lon': 'glamf', 'lat': 'gphif', 'time': 'time_counter'}}
 
     fieldset = FieldSet.from_nemo(filenames, variables, dimensions)
-    fieldset.U.vmax = 5
-    fieldset.V.vmax = 5
     fieldset.nemo_res = res
 
     fieldset.cmems = False
@@ -136,6 +134,7 @@ def get_particle_set(fieldset):
         age = Variable('age', dtype=np.float32, initial=0.)
         # beached : 0 sea, 1 beached, 2 after non-beach dyn, 3 after beach dyn, 4 please unbeach
         beached = Variable('beached', dtype=np.int32, initial=0.)
+        unbeachCount = Variable('unbeachCount', dtype=np.int32, initial=0.)
 
     # meshgrid containing 11x11 points uniformly distributed in a [0,1]x[0,1] quad
     vec = np.linspace(0, 1, 11)
