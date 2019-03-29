@@ -53,7 +53,7 @@ def BrownianMotion2D(particle, fieldset, time):
 def BeachTesting(particle, fieldset, time):
     if particle.beached == 2 or particle.beached == 3:
         (u, v) = fieldset.UV[time, particle.depth, particle.lat, particle.lon]
-        if u == 0 and v == 0:
+        if fabs(u) < 1e-14 and fabs(v) < 1e-14:
             if particle.beached == 2:
                 particle.beached = 4
             else:

@@ -47,11 +47,11 @@ def set_cmems(fieldset):
     for y in years:
         basepath = data_dir + str(y) + '/*/' + 'metoffice_foam1_amm7_NWS_RFVL_dm*.nc'
         fnames += sorted(glob(str(basepath)))
-    dimensionsU = {'data': 'vozocrtx', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
-    dimensionsV = {'data': 'vomecrty', 'lon': 'lon', 'lat': 'lat', 'time': 'time'}
+    dimensionsU = {'lon': 'lon', 'lat': 'lat', 'time': 'time'}
+    dimensionsV = {'lon': 'lon', 'lat': 'lat', 'time': 'time'}
     indices = {'lon': range(1, 296), 'lat': range(1, 374)}  # cmems puts nan values at its borders
-    Ucmems = Field.from_netcdf(fnames, 'Ucmems', dimensionsU, fieldtype='U', indices=indices, allow_time_extrapolation=False)
-    Vcmems = Field.from_netcdf(fnames, 'Vcmems', dimensionsV, fieldtype='V', indices=indices, allow_time_extrapolation=False, grid=Ucmems.grid, dataFiles=Ucmems.dataFiles)
+    Ucmems = Field.from_netcdf(fnames, ('Ucmems', 'vozocrtx'), dimensionsU, fieldtype='U', indices=indices, allow_time_extrapolation=False)
+    Vcmems = Field.from_netcdf(fnames, ('Vcmems', 'vomecrty'), dimensionsV, fieldtype='V', indices=indices, allow_time_extrapolation=False, grid=Ucmems.grid, dataFiles=Ucmems.dataFiles)
     fieldset.add_field(Ucmems)
     fieldset.add_field(Vcmems)
     fieldset.Ucmems.vmax = 5
@@ -82,10 +82,10 @@ def set_unbeaching(fieldset):
 
     if fieldset.cmems:
         fname = '/home/philippe/data/cmems_NWS_rean_004_009_unbeaching_vel.nc'
-        dimensionsU = {'data': 'unBeachU', 'lon': 'lon', 'lat': 'lat'}
-        Ucmems_unbeach = Field.from_netcdf(fname, 'Ucmems_unbeach', dimensionsU, fieldtype='U')
-        dimensionsV = {'data': 'unBeachV', 'lon': 'lon', 'lat': 'lat'}
-        Vcmems_unbeach = Field.from_netcdf(fname, 'Vcmems_unbeach', dimensionsV, fieldtype='V')
+        dimensionsU = {'lon': 'lon', 'lat': 'lat'}
+        Ucmems_unbeach = Field.from_netcdf(fname, ('Ucmems_unbeach', 'unBeachU'), dimensionsU, fieldtype='U')
+        dimensionsV = {'lon': 'lon', 'lat': 'lat'}
+        Vcmems_unbeach = Field.from_netcdf(fname, ('Vcmems_unbeach', 'unBeachV'), dimensionsV, fieldtype='V')
         fieldset.add_field(Ucmems_unbeach)
         fieldset.add_field(Vcmems_unbeach)
 
@@ -105,10 +105,10 @@ def set_stokes(fieldset):
     for y in years:
         basepath = data_dir + str(y) + '/ww3.*_uss.nc'
         fnames += sorted(glob(str(basepath)))
-    dimensionsU = {'data': 'uuss', 'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
-    dimensionsV = {'data': 'vuss', 'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
-    Uuss = Field.from_netcdf(fnames, 'Uuss', dimensionsU, fieldtype='U', allow_time_extrapolation=False)
-    Vuss = Field.from_netcdf(fnames, 'Vuss', dimensionsV, fieldtype='V', allow_time_extrapolation=False, grid=Uuss.grid, dataFiles=Uuss.dataFiles)
+    dimensionsU = {'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
+    dimensionsV = {'lon': 'longitude', 'lat': 'latitude', 'time': 'time'}
+    Uuss = Field.from_netcdf(fnames, ('Uuss', 'uuss'), dimensionsU, fieldtype='U', allow_time_extrapolation=False)
+    Vuss = Field.from_netcdf(fnames, ('Vuss', 'vuss'), dimensionsV, fieldtype='V', allow_time_extrapolation=False, grid=Uuss.grid, dataFiles=Uuss.dataFiles)
     fieldset.add_field(Uuss)
     fieldset.add_field(Vuss)
     fieldset.Uuss.vmax = 5
