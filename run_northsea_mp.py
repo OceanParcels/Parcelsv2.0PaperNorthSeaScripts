@@ -19,22 +19,39 @@ from datetime import timedelta as delta
 from northsea_mp_kernels import *
 
 
-def get_nemo_fieldset(res='0083'):
+def get_nemo_fieldset(res='0083', run3D=False):
     data_dir = '/projects/0/topios/hydrodynamic_data/NEMO-MEDUSA/ORCA%s-N006/' % res
     ufiles = sorted(glob(data_dir+'means/ORCA%s-N06_200?????d05U.nc' % res))
     vfiles = sorted(glob(data_dir+'means/ORCA%s-N06_200?????d05V.nc' % res))
     mesh_mask = data_dir + 'domain/coordinates.nc'
 
-    filenames = {'U': {'lon': mesh_mask, 'lat': mesh_mask, 'data': ufiles},
-                 'V': {'lon': mesh_mask, 'lat': mesh_mask, 'data': vfiles}}
+    if run3D:
+        wfiles = sorted(glob(data_dir+'means/ORCA%s-N06_200?????d05W.nc' % res))
+        filenames = {'U': {'lon': mesh_mask, 'lat': mesh_mask, 'depth': wfiles[0], 'data': ufiles},
+                     'V': {'lon': mesh_mask, 'lat': mesh_mask, 'depth': wfiles[0], 'data': vfiles},
+                     'W': {'lon': mesh_mask, 'lat': mesh_mask, 'depth': wfiles[0], 'data': wfiles}}
+        variables = {'U': 'uo',
+                     'V': 'vo',
+                     'W': 'wo'}
+        dimensions = {'U': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'depthw', 'time': 'time_counter'},
+                      'V': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'depthw', 'time': 'time_counter'},
+                      'W': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'depthw', 'time': 'time_counter'}}
+    else:
+        filenames = {'U': {'lon': mesh_mask, 'lat': mesh_mask, 'data': ufiles},
+                     'V': {'lon': mesh_mask, 'lat': mesh_mask, 'data': vfiles}}
 
-    variables = {'U': 'uo',
-                 'V': 'vo'}
-    dimensions = {'U': {'lon': 'glamf', 'lat': 'gphif', 'time': 'time_counter'},
-                  'V': {'lon': 'glamf', 'lat': 'gphif', 'time': 'time_counter'}}
+        variables = {'U': 'uo',
+                     'V': 'vo'}
+        dimensions = {'U': {'lon': 'glamf', 'lat': 'gphif', 'time': 'time_counter'},
+                      'V': {'lon': 'glamf', 'lat': 'gphif', 'time': 'time_counter'}}
 
     fieldset = FieldSet.from_nemo(filenames, variables, dimensions)
     fieldset.nemo_res = res
+    if run3D:
+        def compute(fieldset):
+            fieldset.W.data[:, 0, :, :] = 0.
+
+        fieldset.compute_on_defer = compute
 
     fieldset.cmems = False
     return fieldset
@@ -128,7 +145,7 @@ def set_diffusion(fieldset, diffusivity):
                              grid=meshSize.grid, mesh='spherical'))
 
 
-def get_particle_set(fieldset):
+def get_particle_set(fieldset, run3D=False):
 
     class PlasticParticle(JITParticle):
         age = Variable('age', dtype=np.float32, initial=0.)
@@ -156,19 +173,34 @@ def get_particle_set(fieldset):
     lat_t = (1-xsi)*(1-eta) * latCorners[0] + xsi*(1-eta) * latCorners[1] + \
         xsi*eta * latCorners[2] + (1-xsi)*eta * latCorners[3]
 
-    # gather all particles, released every day for one year
     lons = np.concatenate((lon_r.flatten(), lon_t.flatten()))
     lats = np.concatenate((lat_r.flatten(), lat_t.flatten()))
+
+    if run3D:
+        seeding_depths = np.array([.1, .5, 1.])
+
+        depths = np.repeat(seeding_depths, len(lons))
+        lons = np.tile(lons, len(seeding_depths))
+        lats = np.tile(lats, len(seeding_depths))
+
+    # gather all particles, released every day for one year
     times = np.arange(np.datetime64('2000-01-05'), np.datetime64('2001-01-05'))
 
-    return ParticleSet.from_list(fieldset, PlasticParticle,
-                                 lon=np.tile(lons, [len(times)]),
-                                 lat=np.tile(lats, [len(times)]),
-                                 time=np.repeat(times, len(lons)))
+    if run3D:
+        return ParticleSet.from_list(fieldset, PlasticParticle,
+                                     lon=np.tile(lons, [len(times)]),
+                                     lat=np.tile(lats, [len(times)]),
+                                     depth=np.tile(depths, [len(times)]),
+                                     time=np.repeat(times, len(lons)))
+    else:
+        return ParticleSet.from_list(fieldset, PlasticParticle,
+                                     lon=np.tile(lons, [len(times)]),
+                                     lat=np.tile(lats, [len(times)]),
+                                     time=np.repeat(times, len(lons)))
 
 
-def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusion=0):
-    fieldset = get_nemo_fieldset(nemo_res)
+def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusion=0, run3D=False):
+    fieldset = get_nemo_fieldset(nemo_res, run3D)
     if cmems:
         set_cmems(fieldset)
     if stokes:
@@ -177,9 +209,11 @@ def run_northsea_mp(outfile, nemo_res='0083', cmems=False, stokes=False, diffusi
         set_diffusion(fieldset, diffusion)
 
     set_unbeaching(fieldset)
-    pset = get_particle_set(fieldset)
+    pset = get_particle_set(fieldset, run3D)
 
-    kernel = pset.Kernel(AdvectionRK4) + pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching)
+    kernel = pset.Kernel(AdvectionRK4_3D) if run3D else pset.Kernel(AdvectionRK4)
+    BeachTesting = BeachTesting_3D if run3D else BeachTesting_2D
+    kernel += pset.Kernel(BeachTesting) + pset.Kernel(UnBeaching)
     if stokes:
         kernel += pset.Kernel(StokesDrag) + pset.Kernel(BeachTesting)
     if diffusion > 0:
