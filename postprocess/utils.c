@@ -43,6 +43,26 @@ void cumulative_age(int **pxi, int **pyi, float **page, float **cumulative_age_m
   }
 }
 
+void cumulative_depth_lim(int **pxi, int **pyi, float **pdepth, float **cumulative_depth_count_map, int npart, int ntimes, int nlat, int nlon, float depth_lim)
+{
+  int (*xi)[ntimes] = (int (*)[ntimes]) pxi;
+  int (*yi)[ntimes] = (int (*)[ntimes]) pyi;
+  float (*depth)[ntimes] = (float (*)[ntimes]) pdepth;
+  float (*depth_count_map)[nlon] = (float (*)[nlon]) cumulative_depth_count_map;
+
+  int pi,ti;
+  for (pi=0; pi<npart; pi++){
+    for (ti=0; ti<ntimes; ti++){
+      if ((yi[pi][ti] >= 0) && (yi[pi][ti] <nlat) &&
+          (xi[pi][ti] >= 0) && (xi[pi][ti] <nlon)){
+        if (depth[pi][ti] >= depth_lim)
+          depth_count_map[yi[pi][ti]][xi[pi][ti]] += 1.;
+      }
+    }
+  }
+}
+
+
 void touched(int **pxi, int **pyi, float **touched_map, int npart, int ntimes, int nlat, int nlon)
 {
   int (*xi)[ntimes] = (int (*)[ntimes]) pxi;

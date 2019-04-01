@@ -19,10 +19,11 @@ zones['0083_cmems'] = np.load('nemo0083_cmems_zone_concentration.npy')
 zones['025'] = np.load('nemo025_zone_concentration.npy')
 zones['0083_stokes'] = np.load('nemo0083_stokes_zone_concentration.npy')
 zones['0083_diff'] = np.load('nemo0083_diff_zone_concentration.npy')
+zones['0083_3d'] = np.load('nemo0083_3d_zone_concentration.npy')
 
 
 def plot_run(data, name, show_legend=False):
-    fig = plt.figure(figsize=(14, 8.5), dpi=60, facecolor='w', edgecolor='k')
+    fig = plt.figure(figsize=(14, 8.5), dpi=300, facecolor='w', edgecolor='k')
     ax = fig.add_axes([.1, .1, .8, .8])
     ax.axis([0, 600, 0, 100.5])
 
@@ -30,15 +31,15 @@ def plot_run(data, name, show_legend=False):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
-    styles = ['-', '--', ':', '-.', '-']
     ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_ticks_position('bottom')
 
-    j = [1, 0, 2, 3, 4]
+    j = [1, 0, 2, 3, 4, 5]
     color = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
-    for i in range(4):
-        ax.plot(100*data[j[i]], styles[i], linewidth=4, color=color[i])
-    ax.plot(100*data[4], dashes=[2, 6], linewidth=4, color=color[4])
+    # linestyles https://matplotlib.org/gallery/lines_bars_and_markers/linestyles.html
+    linestyles = ['-', '--', ':', '-.', (0, (3, 1, 1, 1)), (0, (3, 5, 1, 5, 1, 5))]
+    for i in range(6):
+        ax.plot(100*data[j[i]], linestyle=linestyles[i], linewidth=4, color=color[i])
 
     plt.xticks([365/4. * i for i in range(7)],
                ("0", ".5", "1", "1.5", "2", "2.5", "3"))
@@ -53,10 +54,10 @@ def plot_run(data, name, show_legend=False):
     ax.xaxis.set_label_coords(.98, -0.01)
 
     zone_names = ['North Sea', 'Danish Strait',
-                  'Norwegian Sea', 'Arctic', 'Atlantic']
+                  'Norwegian Sea', 'Arctic', 'Atlantic', 'Baltic Sea']
 
     if show_legend:
-        legend = ax.legend(zone_names, fontsize=30)
+        legend = ax.legend(zone_names, fontsize=30, ncol=2)
         legend.get_frame().set_linewidth(0.0)
     fig.savefig('budget_%s.png' % name)
 

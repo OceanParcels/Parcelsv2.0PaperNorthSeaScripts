@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import AutoMinorLocator, LinearLocator, FixedFormatter
 import numpy as np
 import postprocess as postpro
 from postprocess import NWcontinental_shelf_zones
@@ -22,8 +23,8 @@ from parcels import RectilinearZGrid, Field
 from os import path
 
 
-def draw(filename):
-    p = postpro.ParticleData(filename)
+def draw(filename, part_3d=False):
+    p = postpro.ParticleData(filename, part_3d=part_3d)
     basename = path.splitext(path.basename(filename))[0]
     print('Total number of particles: %d' % p.npart)
 
@@ -33,12 +34,6 @@ def draw(filename):
     p.keepParticles(pind)
     wetParticles = p.npart
     print('Number of initially wet particles: %d' % wetParticles)
-
-    pland = np.logical_and(abs(p.lon[:, 580]-p.lon[:, 500]) < 1e-4,
-                           abs(p.lat[:, 580]-p.lat[:, 500]) < 1e-4)
-    pind = np.where(np.logical_not(pland))
-    beachingParticles = wetParticles - pind[0].shape[0]
-    print('Number of stuck particles: %d' % beachingParticles)
 
     p.origin = np.where(p.lon[:, 0] > 2, 0, 1)
 
@@ -56,6 +51,22 @@ def draw(filename):
     # map_count = utils.histogram(pxi, pyi, (len(glat), len(glon)))
     # map_mean_age = utils.mean_age(pxi, pyi, p.age, (len(glat), len(glon)), map_count)
     map_touched = utils.touched(pxi, pyi, (len(glat), len(glon)))
+
+    if part_3d:
+        gdepth = np.arange(0, 2000, 5)
+        # map_count = utils.histogram(pxi, pyi, (len(glat), len(glon)))
+        # map_depth_0 = utils.depth_fraction(pxi, pyi, p.depth, 0, (len(glat), len(glon)), map_count)
+        # map_depth_05 = utils.depth_fraction(pxi, pyi, p.depth, 0.5, (len(glat), len(glon)), map_count)
+        # map_depth_1 = utils.depth_fraction(pxi, pyi, p.depth, 1, (len(glat), len(glon)), map_count)
+        # map_depth_10 = utils.depth_fraction(pxi, pyi, p.depth, 10, (len(glat), len(glon)), map_count)
+        # map_depth_50 = utils.depth_fraction(pxi, pyi, p.depth, 50, (len(glat), len(glon)), map_count)
+        pzi = utils.locate_depth(p.depth, gdepth)
+
+        lat_edges = range(np.min(pyi), np.max(pyi))
+        depth_edges = range(np.max(pzi))
+        dens, lat_edges, depth_edges = np.histogram2d(pyi.flatten(), pzi.flatten(), bins=(lat_edges, depth_edges))
+        dens = dens.T
+        dens_lat, dens_depth = np.meshgrid(glat[lat_edges], gdepth[depth_edges])
 
     glon_f = np.arange(-120, 120, 1/4.)
     glat_f = np.arange(35, 90, .5/4.)
@@ -123,6 +134,7 @@ def draw(filename):
             vmax = np.max(data)
         if under == 'white':
             data = np.ma.masked_where(data < vmin+1e-15, data)
+        print 'min/max: ', np.min(data), np.max(data)
 
         if log:
             m.pcolormesh(xs, ys, data, cmap=cmap, norm=colors.LogNorm(vmin=vmin, vmax=vmax), zorder=2)
@@ -141,13 +153,70 @@ def draw(filename):
             plt.savefig(fname)
         plt.close(fig)
 
+    def plot_vertProfile(dens, dens_lat, dens_depth, show, fname):
+        if fname:
+            fig = plt.figure(figsize=(14, 8.5), dpi=150, facecolor='w', edgecolor='k')
+        else:
+            fig = plt.figure(figsize=(14, 8.5), dpi=60, facecolor='w', edgecolor='k')
+
+        ax1 = fig.add_axes([.07, .06, .83, .68])
+        cmap = plt.get_cmap('plasma')
+        cmap.set_over('green')
+        im1 = ax1.pcolormesh(dens_lat, -dens_depth, dens, norm=colors.LogNorm(vmin=1, vmax=8e5), cmap=cmap)
+        ax1.yaxis.set_major_locator(LinearLocator(numticks=5))
+        ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
+        ax1.yaxis.set_major_formatter(FixedFormatter(list(np.arange(2000, 10, -500)) + ["0 m"]))
+        ax1.tick_params(which='major', length=7)
+        ax1.tick_params(which='minor', length=5)
+        for label in ax1.get_ymajorticklabels():
+            label.set_fontsize(20)
+        for label in ax1.get_xmajorticklabels():
+            label.set_fontsize(20)
+        ax1.set_xticks([40+5*i for i in range(10)])
+        ax1.set_xticklabels([u"%g\u00B0N" % (40+5*i) for i in range(10)])
+
+        ax2 = fig.add_axes([.07, .78, .83, .19])
+        dens2 = np.where(dens == 0, np.nan, dens)
+        cmap = plt.get_cmap('jet')
+        cmap.set_over('green')
+        im2 = ax2.pcolormesh(dens_lat[:11, :], -dens_depth[:11, :], dens2[:11, :], vmin=1, vmax=8e5, cmap=cmap)
+        ax2.yaxis.set_major_locator(LinearLocator(numticks=3))
+        ax2.yaxis.set_minor_locator(AutoMinorLocator(5))
+        ax2.yaxis.set_major_formatter(FixedFormatter(["50", "25", "0 m"]))
+        ax2.tick_params(which='major', length=7)
+        ax2.tick_params(which='minor', length=5)
+        ax2.set_xticks(())
+        for label in ax2.get_ymajorticklabels():
+            label.set_fontsize(20)
+        ax2.set_xticks([40+5*i for i in range(10)])
+        ax2.set_xticklabels(['' for i in range(10)])
+
+        ax3 = fig.add_axes([.91, .06, .017, .68])
+        cbar = plt.colorbar(im1, cax=ax3, extend='max')
+        cbar.ax.tick_params(labelsize=20)
+
+        ax4 = fig.add_axes([.91, .78, .017, .19])
+        cbar = plt.colorbar(im2, cax=ax4, extend='max', ticks=([1] + [1e5*i for i in range(1, 9)]))
+        cbar.ax.set_yticklabels([1, '', '$2 \cdot 10^5$', '', '$4 \cdot 10^5$', '', '$6 \cdot 10^5$', '', '$8 \cdot 10^5$'])
+        cbar.ax.tick_params(labelsize=20)
+
+        if show:
+            plt.show()
+        if fname:
+            plt.savefig(fname)
+
     # title = 'Age (days)'
     # plot(map_mean_age, title, cmap_name='plasma_r', log=False, vmin=0, vmax=3*365, show=False, fname=basename+'_mean_age.png')
     # title = 'Age (days)'
     # plot(map_mean_age, title, cmap_name='plasma_r', log=False, vmin=0, vmax=365, show=False, fname=basename+'_mean_age_short.png')
+
     title = '# Part / km$^2$'
     plot(map_density_3rd_year, title, cmap_name='hot_r', log=True, vmin=1e-10, vmax=1e-5, under='white', over='blue', show=False, fname=basename+'_3rd_yr_density.png')
+    plot(map_density_3rd_year, title, cmap_name='hot_r', log=False, vmin=1e-7, vmax=1e-5, under='white', over='blue', show=False, fname=basename+'_3rd_yr_density_lin.png')
+
     title = '%'
     plot(map_touched, title, cmap_name='Spectral_r', log=True, vmin=.1, vmax=100, under='white', show=False, fname=basename+'_touched_log.png')
-    # title = '%'
-    # plot(map_touched, title, cmap_name='Spectral_r', log=False, vmin=.1, vmax=100, under='white', show=False, fname=basename+'_touched_lin.png')
+    plot(map_touched, title, cmap_name='Spectral_r', log=False, vmin=.1, vmax=100, under='white', show=False, fname=basename+'_touched_lin.png')
+
+    if part_3d:
+        plot_vertProfile(dens, dens_lat, dens_depth, show=False, fname=basename+'_vertProfile.png')
